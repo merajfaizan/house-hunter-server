@@ -92,6 +92,31 @@ async function run() {
         res.status(500).json({ message: "Internal server error" });
       }
     });
+
+    // Login endpoint
+    app.post("/login", async (req, res) => {
+      const { email, password } = req.body;
+      try {
+        // Check if the email exists
+        const user = await usersCollection.findOne({ email });
+
+        if (!user) {
+          return res.status(400).json({ message: "Invalid email or password" });
+        }
+
+        // Check if the password is correct
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+        if (isPasswordCorrect) {
+          res
+            .status(201)
+            .json({ email: user.email, message: "Login successful" });
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
   } finally {
     // await client.close(console.log("database is closed"));
   }
