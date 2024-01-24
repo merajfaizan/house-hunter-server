@@ -83,10 +83,17 @@ async function run() {
         // Save the user to the database
         await usersCollection.insertOne(user);
 
+        // Generate a JWT
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+          expiresIn: "24h",
+        });
+
         // Send a success response
-        res
-          .status(201)
-          .json({ email: user.email, message: "User registered successfully" });
+        res.status(201).json({
+          user: { name, email, phone, role },
+          token,
+          message: "Successfully registered",
+        });
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
@@ -101,16 +108,31 @@ async function run() {
         const user = await usersCollection.findOne({ email });
 
         if (!user) {
-          return res.status(400).json({ message: "Invalid email or password" });
+          return res.status(400).json({ message: "Email is not registered" });
         }
 
         // Check if the password is correct
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
         if (isPasswordCorrect) {
+          // Generate a JWT
+          const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+            expiresIn: "24h",
+          });
+
+          // Get the user data
+          const { name, email, phone, role } = user;
+
+          // Send a success response
           res
             .status(201)
-            .json({ email: user.email, message: "Login successful" });
+            .json({
+              user: { name, email, phone, role },
+              token,
+              message: "Login successful",
+            });
+        } else {
+          res.status(400).json({ message: "password is incorrect" });
         }
       } catch (error) {
         console.error(error);
